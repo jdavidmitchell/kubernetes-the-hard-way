@@ -9,8 +9,14 @@ adjustments. Best is to follow the original guide side-by-side with this page as
 the former providers background and context and this page contains only the
 commands.
 
-The intent of this page is similar to the original guide. My motivation to
-compile it has been to learn more about AWS and Kubernetes.
+The intent of this page is similar to the original guide.
+
+[CR comment] The terraform script will setup the AWS resources, including an elastic loadbalancer,
+an ssh key and so on. However, since the terraform script tries to install an old version of etcd and kubernetes,
+these versions no longer exist and the terraform script will fail, after the AWS resources are setup.
+It is our intent to update this README with the lastest versions, but this is a work in progress.
+It is best to use [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/)
+to complete the installation, manually.
 
 ## Labs
 
@@ -45,12 +51,6 @@ Install AWS CLI following instructions at https://aws.amazon.com/cli/.
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/02-client-tools.md).
-
-**OS X**: If you run into issues with `cfssl` install it using brew:
-
-```sh
-brew install cfssl
-```
 
 # Provisioning Compute Resources
 
