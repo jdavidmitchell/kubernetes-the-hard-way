@@ -470,7 +470,7 @@ cfssl gencert \
 
 CR Comment: At this point, the terraform script is finished. As I recall, the keys had to be manually copied.
 Also, more keys need to be generated in the newer versions of kubernetes.
-[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md)
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md)
 
 ```sh
 for instance in worker-0 worker-1 worker-2; do
