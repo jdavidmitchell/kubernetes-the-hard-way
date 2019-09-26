@@ -470,6 +470,7 @@ cfssl gencert \
 
 CR Comment: At this point, the terraform script is finished. As I recall, the keys had to be manually copied.
 Also, more keys need to be generated in the newer versions of kubernetes.
+
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md)
 
 ```sh
@@ -611,6 +612,8 @@ done
 
 # Bootstrapping the etcd Cluster
 
+CR comments: I updated the etcd to a more recent version.
+
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md)
 
 SSH to controller-0, controller-1, controller-2 (replace `controller-N`
@@ -627,9 +630,9 @@ Execute on each controller:
 
 ```sh
 wget -q --show-progress --https-only --timestamping \
-  "https://github.com/coreos/etcd/releases/download/v3.2.11/etcd-v3.2.11-linux-amd64.tar.gz"
-tar -xvf etcd-v3.2.11-linux-amd64.tar.gz
-sudo mv etcd-v3.2.11-linux-amd64/etcd* /usr/local/bin/
+  "https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz"
+tar -xvf etcd-v3.4.0-linux-amd64.tar.gz
+sudo mv etcd-v3.4.0-linux-amd64/etcd* /usr/local/bin/
 sudo mkdir -p /etc/etcd /var/lib/etcd
 sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
 INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
@@ -642,12 +645,13 @@ echo "${ETCD_NAME}"
 ```
 
 ```sh
-cat > etcd.service <<EOF
+cat <<EOF | sudo tee /etc/systemd/system/etcd.service
 [Unit]
 Description=etcd
 Documentation=https://github.com/coreos
 
 [Service]
+Type=notify
 ExecStart=/usr/local/bin/etcd \\
   --name ${ETCD_NAME} \\
   --cert-file=/etc/etcd/kubernetes.pem \\
@@ -660,7 +664,7 @@ ExecStart=/usr/local/bin/etcd \\
   --client-cert-auth \\
   --initial-advertise-peer-urls https://${INTERNAL_IP}:2380 \\
   --listen-peer-urls https://${INTERNAL_IP}:2380 \\
-  --listen-client-urls https://${INTERNAL_IP}:2379,http://127.0.0.1:2379 \\
+  --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
   --advertise-client-urls https://${INTERNAL_IP}:2379 \\
   --initial-cluster-token etcd-cluster-0 \\
   --initial-cluster controller-0=https://10.240.0.10:2380,controller-1=https://10.240.0.11:2380,controller-2=https://10.240.0.12:2380 \\
@@ -685,6 +689,8 @@ ETCDCTL_API=3 etcdctl member list
 
 # Bootstrapping the Kubernetes Control Plane
 
+CR comments: Updated Kubernetes to a more recent version.
+
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md)
 
 SSH to controller-0, controller-1, controller-2 (replace `controller-N`
@@ -702,24 +708,25 @@ Execute on each controller:
 
 ```sh
 wget -q --show-progress --https-only --timestamping \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-apiserver" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-controller-manager" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-scheduler" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubectl"
+  "https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kube-apiserver" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kube-controller-manager" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kube-scheduler" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl"
 chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
 sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl /usr/local/bin/
 sudo mkdir -p /var/lib/kubernetes/
-sudo mv ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem encryption-config.yaml /var/lib/kubernetes/
+sudo mv ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem \
+    service-account-key.pem service-account.pem \
+    encryption-config.yaml /var/lib/kubernetes/
 INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 
-cat > kube-apiserver.service <<EOF
+cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
 Description=Kubernetes API Server
 Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-apiserver \\
-  --admission-control=Initializers,NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
   --advertise-address=${INTERNAL_IP} \\
   --allow-privileged=true \\
   --apiserver-count=3 \\
@@ -730,20 +737,19 @@ ExecStart=/usr/local/bin/kube-apiserver \\
   --authorization-mode=Node,RBAC \\
   --bind-address=0.0.0.0 \\
   --client-ca-file=/var/lib/kubernetes/ca.pem \\
-  --enable-swagger-ui=true \\
+  --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
   --etcd-cafile=/var/lib/kubernetes/ca.pem \\
   --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\
   --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\
   --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\
   --event-ttl=1h \\
-  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
-  --insecure-bind-address=127.0.0.1 \\
+  --encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
   --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\
   --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
   --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem \\
   --kubelet-https=true \\
   --runtime-config=api/all \\
-  --service-account-key-file=/var/lib/kubernetes/ca-key.pem \\
+  --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
   --service-cluster-ip-range=10.32.0.0/24 \\
   --service-node-port-range=30000-32767 \\
   --tls-cert-file=/var/lib/kubernetes/kubernetes.pem \\
@@ -756,7 +762,9 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-cat > kube-controller-manager.service <<EOF
+sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+
+cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
 [Unit]
 Description=Kubernetes Controller Manager
 Documentation=https://github.com/kubernetes/kubernetes
@@ -768,11 +776,12 @@ ExecStart=/usr/local/bin/kube-controller-manager \\
   --cluster-name=kubernetes \\
   --cluster-signing-cert-file=/var/lib/kubernetes/ca.pem \\
   --cluster-signing-key-file=/var/lib/kubernetes/ca-key.pem \\
+  --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
   --leader-elect=true \\
-  --master=http://127.0.0.1:8080 \\
   --root-ca-file=/var/lib/kubernetes/ca.pem \\
-  --service-account-private-key-file=/var/lib/kubernetes/ca-key.pem \\
+  --service-account-private-key-file=/var/lib/kubernetes/service-account-key.pem \\
   --service-cluster-ip-range=10.32.0.0/24 \\
+  --use-service-account-credentials=true \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -781,15 +790,25 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-cat > kube-scheduler.service <<EOF
+sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+
+cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
+apiVersion: kubescheduler.config.k8s.io/v1alpha1
+kind: KubeSchedulerConfiguration
+clientConnection:
+  kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
+leaderElection:
+  leaderElect: true
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/kube-scheduler.service
 [Unit]
 Description=Kubernetes Scheduler
 Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-scheduler \\
-  --leader-elect=true \\
-  --master=http://127.0.0.1:8080 \\
+  --config=/etc/kubernetes/config/kube-scheduler.yaml \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -798,7 +817,6 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-sudo mv kube-apiserver.service kube-scheduler.service kube-controller-manager.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
 sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
@@ -807,6 +825,10 @@ sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
 ```sh
 kubectl get componentstatuses
 ```
+
+### Enable HTTP Health Checks
+
+[Follow the Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
 
 ## RBAC for Kubelet Authorization
 
@@ -820,7 +842,7 @@ ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 ```
 
 ```sh
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply --kubeconfig admin.kubeconfig -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
@@ -842,7 +864,7 @@ rules:
       - "*"
 EOF
 
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply --kubeconfig admin.kubeconfig -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -857,13 +879,18 @@ subjects:
     kind: User
     name: kubernetes
 EOF
+
 ```
 
 ## The Kubernetes Frontend Load Balancer
 
 Nothing to do - already setup in [previous section](#kubernetes-public-address)
 
+You can try: curl --cacert ca.pem https://${KUBERNETES_PUBLIC_ADDRESS}:6443/version
+
 # Bootstrapping the Kubernetes Worker Nodes
+
+CR Comments: Updated the more recent versions of kubernetes.
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md)
 
@@ -879,14 +906,17 @@ ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 Execute on each worker:
 
 ```sh
+sudo swapoff -a
 sudo apt-get update
 sudo apt-get -y install socat
 wget -q --show-progress --https-only --timestamping \
-  https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz \
-  https://github.com/containerd/cri-containerd/releases/download/v1.0.0-beta.1/cri-containerd-1.0.0-beta.1.linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kubelet
+  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.16.0/crictl-v1.16.0-linux-amd64.tar.gz \
+  https://github.com/opencontainers/runc/releases/download/v1.0.0-rc8/runc.amd64 \
+  https://github.com/containernetworking/plugins/releases/download/v0.8.2/cni-plugins-linux-amd64-v0.8.2.tgz \
+  https://github.com/containerd/containerd/releases/download/v1.2.9/containerd-1.2.9.linux-amd64.tar.gz \
+  https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubelet
 sudo mkdir -p \
   /etc/cni/net.d \
   /opt/cni/bin \
@@ -894,10 +924,14 @@ sudo mkdir -p \
   /var/lib/kube-proxy \
   /var/lib/kubernetes \
   /var/run/kubernetes
-sudo tar -xvf cni-plugins-amd64-v0.6.0.tgz -C /opt/cni/bin/
-sudo tar -xvf cri-containerd-1.0.0-beta.1.linux-amd64.tar.gz -C /
-chmod +x kubectl kube-proxy kubelet
-sudo mv kubectl kube-proxy kubelet /usr/local/bin/
+mkdir containerd
+  tar -xvf crictl-v1.15.0-linux-amd64.tar.gz
+  tar -xvf containerd-1.2.9.linux-amd64.tar.gz -C containerd
+  sudo tar -xvf cni-plugins-linux-amd64-v0.8.2.tgz -C /opt/cni/bin/
+  sudo mv runc.amd64 runc
+  chmod +x crictl kubectl kube-proxy kubelet runc 
+  sudo mv crictl kubectl kube-proxy kubelet runc /usr/local/bin/
+  sudo mv containerd/bin/* /bin/
 ```
 
 ```sh
@@ -907,7 +941,7 @@ echo "${POD_CIDR}"
 ```
 
 ```sh
-cat > 10-bridge.conf <<EOF
+cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
 {
     "cniVersion": "0.3.1",
     "name": "bridge",
@@ -925,14 +959,52 @@ cat > 10-bridge.conf <<EOF
 }
 EOF
 
-cat > 99-loopback.conf <<EOF
+cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
 {
     "cniVersion": "0.3.1",
+    "name": "lo",
     "type": "loopback"
 }
 EOF
 
-sudo mv 10-bridge.conf 99-loopback.conf /etc/cni/net.d/
+```
+# Configure containerd
+
+```sh
+sudo mkdir -p /etc/containerd/
+
+cat << EOF | sudo tee /etc/containerd/config.toml
+[plugins]
+  [plugins.cri.containerd]
+    snapshotter = "overlayfs"
+    [plugins.cri.containerd.default_runtime]
+      runtime_type = "io.containerd.runtime.v1.linux"
+      runtime_engine = "/usr/local/bin/runc"
+      runtime_root = ""
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/containerd.service
+[Unit]
+Description=containerd container runtime
+Documentation=https://containerd.io
+After=network.target
+
+[Service]
+ExecStartPre=/sbin/modprobe overlay
+ExecStart=/bin/containerd
+Restart=always
+RestartSec=5
+Delegate=yes
+KillMode=process
+OOMScoreAdjust=-999
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 ```
 
 ```sh
@@ -941,37 +1013,51 @@ WORKER_NAME=$(curl -s http://169.254.169.254/latest/user-data/ \
 echo "${WORKER_NAME}"
 ```
 
+# Configure the Kubelet
+
 ```sh
 sudo mv ${WORKER_NAME}-key.pem ${WORKER_NAME}.pem /var/lib/kubelet/
 sudo mv ${WORKER_NAME}.kubeconfig /var/lib/kubelet/kubeconfig
 sudo mv ca.pem /var/lib/kubernetes/
 
-cat > kubelet.service <<EOF
+cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    enabled: true
+  x509:
+    clientCAFile: "/var/lib/kubernetes/ca.pem"
+authorization:
+  mode: Webhook
+clusterDomain: "cluster.local"
+clusterDNS:
+  - "10.32.0.10"
+podCIDR: "${POD_CIDR}"
+resolvConf: "/run/systemd/resolve/resolv.conf"
+runtimeRequestTimeout: "15m"
+tlsCertFile: "/var/lib/kubelet/${WORKER_NAME}.pem"
+tlsPrivateKeyFile: "/var/lib/kubelet/${WORKER_NAME}-key.pem"
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
 [Unit]
 Description=Kubernetes Kubelet
 Documentation=https://github.com/kubernetes/kubernetes
-After=cri-containerd.service
-Requires=cri-containerd.service
+After=containerd.service
+Requires=containerd.service
 
 [Service]
 ExecStart=/usr/local/bin/kubelet \\
-  --allow-privileged=true \\
-  --anonymous-auth=false \\
-  --authorization-mode=Webhook \\
-  --client-ca-file=/var/lib/kubernetes/ca.pem \\
-  --cloud-provider= \\
-  --cluster-dns=10.32.0.10 \\
-  --cluster-domain=cluster.local \\
+  --config=/var/lib/kubelet/kubelet-config.yaml \\
   --container-runtime=remote \\
-  --container-runtime-endpoint=unix:///var/run/cri-containerd.sock \\
+  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\
   --image-pull-progress-deadline=2m \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
   --network-plugin=cni \\
-  --pod-cidr=${POD_CIDR} \\
   --register-node=true \\
-  --runtime-request-timeout=15m \\
-  --tls-cert-file=/var/lib/kubelet/${WORKER_NAME}.pem \\
-  --tls-private-key-file=/var/lib/kubelet/${WORKER_NAME}-key.pem \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -982,17 +1068,23 @@ EOF
 
 sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
 
-cat > kube-proxy.service <<EOF
+cat <<EOF | sudo tee /var/lib/kube-proxy/kube-proxy-config.yaml
+kind: KubeProxyConfiguration
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+clientConnection:
+  kubeconfig: "/var/lib/kube-proxy/kubeconfig"
+mode: "iptables"
+clusterCIDR: "10.200.0.0/16"
+EOF
+
+cat <<EOF | sudo tee /etc/systemd/system/kube-proxy.service
 [Unit]
 Description=Kubernetes Kube Proxy
 Documentation=https://github.com/kubernetes/kubernetes
 
 [Service]
 ExecStart=/usr/local/bin/kube-proxy \\
-  --cluster-cidr=10.200.0.0/16 \\
-  --kubeconfig=/var/lib/kube-proxy/kubeconfig \\
-  --proxy-mode=iptables \\
-  --v=2
+  --config=/var/lib/kube-proxy/kube-proxy-config.yaml
 Restart=on-failure
 RestartSec=5
 
@@ -1000,10 +1092,10 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-sudo mv kubelet.service kube-proxy.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable containerd cri-containerd kubelet kube-proxy
-sudo systemctl start containerd cri-containerd kubelet kube-proxy
+sudo systemctl enable containerd kubelet kube-proxy
+sudo systemctl start containerd kubelet kube-proxy
+
 ```
 
 # Configuring kubectl for Remote Access
