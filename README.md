@@ -11,7 +11,7 @@ commands.
 
 The intent of this page is similar to the original guide.
 
-[CR comment] The terraform script will setup the AWS resources, including an elastic loadbalancer,
+CR comment: The terraform script will setup the AWS resources, including an elastic loadbalancer,
 an ssh key and so on. However, since the terraform script tries to install an old version of etcd and kubernetes,
 these versions no longer exist and the terraform script will fail, after the AWS resources are setup.
 It is our intent to update this README with the lastest versions, but this is a work in progress.
@@ -606,7 +606,9 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-# Bootstrapping the etcd Cluster
+# Bootstrapping the etcd Cluster (FAIL)
+
+CR Comment: At this point, the terraform script will fail, since etcd-v3.2.11-linux-amd64.tar.gz is old and no longer exits.
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md)
 
