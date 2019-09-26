@@ -11,7 +11,7 @@ resource "aws_vpc" "k8s" {
   enable_dns_support   = "true"
   enable_dns_hostnames = "true"
 
-  tags {
+  tags = {
     Name = "kubernetes-the-hard-way"
   }
 }
@@ -20,7 +20,7 @@ resource "aws_vpc_dhcp_options" "k8s" {
   domain_name         = "us-east-2.compute.internal"
   domain_name_servers = ["AmazonProvidedDNS"]
 
-  tags {
+  tags = {
     Name = "kubernetes"
   }
 }
@@ -34,7 +34,7 @@ resource "aws_subnet" "k8s" {
   vpc_id     = "${aws_vpc.k8s.id}"
   cidr_block = "10.240.0.0/24"
 
-  tags {
+  tags = {
     Name = "kubernetes"
   }
 }
@@ -42,7 +42,7 @@ resource "aws_subnet" "k8s" {
 resource "aws_internet_gateway" "k8s" {
   vpc_id = "${aws_vpc.k8s.id}"
 
-  tags {
+  tags = {
     Name = "kubernetes"
   }
 }
@@ -50,12 +50,12 @@ resource "aws_internet_gateway" "k8s" {
 resource "aws_route_table" "k8s" {
   vpc_id = "${aws_vpc.k8s.id}"
 
-  route = {
+  route {
     cidr_block = "0.0.0.0/0"
     gateway_id = "${aws_internet_gateway.k8s.id}"
   }
 
-  tags {
+  tags = {
     Name = "kubernetes"
   }
 }
@@ -130,7 +130,7 @@ resource "aws_lb_listener" "k8s" {
   protocol          = "TCP"
   port              = 6443
 
-  default_action = {
+  default_action {
     type             = "forward"
     target_group_arn = "${aws_lb_target_group.k8s.arn}"
   }
@@ -149,17 +149,17 @@ resource "aws_key_pair" "k8s" {
 data "aws_ami" "ubuntu" {
   most_recent = true
 
-  filter = {
+  filter {
     name   = "root-device-type"
     values = ["ebs"]
   }
 
-  filter = {
+  filter {
     name   = "architecture"
     values = ["x86_64"]
   }
 
-  filter = {
+  filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
   }
@@ -173,7 +173,7 @@ resource "aws_instance" "controller" {
   associate_public_ip_address = true
   key_name                    = "${aws_key_pair.k8s.key_name}"
   vpc_security_group_ids      = ["${aws_security_group.k8s.id}"]
-  instance_type               = "t2.micro"
+  instance_type               = "t2.small"
   private_ip                  = "${var.controller_ips[count.index]}"
   user_data                   = "name=controller-${count.index}"
   subnet_id                   = "${aws_subnet.k8s.id}"
@@ -190,7 +190,7 @@ resource "aws_instance" "worker" {
   associate_public_ip_address = true
   key_name                    = "${aws_key_pair.k8s.key_name}"
   vpc_security_group_ids      = ["${aws_security_group.k8s.id}"]
-  instance_type               = "t2.micro"
+  instance_type               = "t2.medium"
   private_ip                  = "${var.worker_ips[count.index]}"
   user_data                   = "name=worker-${count.index}|pod-cidr=${var.worker_pod_cidrs[count.index]}"
   subnet_id                   = "${aws_subnet.k8s.id}"
@@ -276,6 +276,7 @@ EOF
     type        = "ssh"
     user        = "ubuntu"
     private_key = "${tls_private_key.k8s.private_key_pem}"
+    host = "${aws_instance.worker.*.public_ip[count.index]}"
   }
 
   provisioner "file" {
@@ -343,6 +344,7 @@ resource "null_resource" "tls_controller" {
     type        = "ssh"
     user        = "ubuntu"
     private_key = "${tls_private_key.k8s.private_key_pem}"
+    host = "${var.controller_ips[count.index]}"
   }
 
   provisioner "file" {
