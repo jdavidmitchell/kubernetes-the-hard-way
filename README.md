@@ -12,8 +12,7 @@ commands.
 The intent of this page is similar to the original guide.
 
 CR comment: The terraform script will setup the AWS resources, including an elastic loadbalancer,
-an ssh key and so on. However, since the terraform script tries to install an old version of etcd and kubernetes,
-these versions no longer exist and the terraform script will fail, after the AWS resources are setup.
+an ssh key and so on. After the AWS resources are setup, you will need to proceed with a manual install.
 It is our intent to update this README with the lastest versions, but this is a work in progress.
 It is best to use [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/)
 to complete the installation, manually.
@@ -467,7 +466,11 @@ cfssl gencert \
   tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
 ```
 
-## Distribute the Client and Server Certificates
+## Distribute the Client and Server Certificates (MANUAL FROM HERE)
+
+CR Comment: At this point, the terraform script is finished. As I recall, the keys had to be manually copied.
+Also, more keys need to be generated in the newer versions of kubernetes.
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md)
 
 ```sh
 for instance in worker-0 worker-1 worker-2; do
@@ -606,9 +609,7 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-# Bootstrapping the etcd Cluster (FAIL)
-
-CR Comment: At this point, the terraform script will fail, since etcd-v3.2.11-linux-amd64.tar.gz is old and no longer exits.
+# Bootstrapping the etcd Cluster
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md)
 
