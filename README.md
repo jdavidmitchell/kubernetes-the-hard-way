@@ -12,10 +12,9 @@ commands.
 The intent of this page is similar to the original guide.
 
 CR comment: The terraform script will setup the AWS resources, including an elastic loadbalancer,
-an ssh key and so on. After the AWS resources are setup, you will need to proceed with a manual install.
-It is our intent to update this README with the lastest versions, but this is a work in progress.
-It is best to use [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/)
-to complete the installation, manually.
+an ssh key and so on. The terraform script will create about half of the certs needed by the k8s cluster. 
+After the AWS resources are setup, you will need to proceed with a manual install.
+This README has been updated with the lastest versions and the latest configuration files, but these configuration files below should be compared the configuration files in [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/) to check for correctness.
 
 ## Labs
 
@@ -39,12 +38,13 @@ to complete the installation, manually.
 ## Amazon Web Services
 
 The commands below deploy Kubernetes cluster into [Amazon Web
-Services](https://aws.amazon.com). I was able to run them using [AWS Free
-Tier](https://aws.amazon.com/free/), at no cost.
+Services](https://aws.amazon.com).
 
-## Amazon Web Services CLI
+## Amazon Web Services CLI and Terraform
 
-Install AWS CLI following instructions at https://aws.amazon.com/cli/.
+Install AWS CLI following instructions at https://aws.amazon.com/cli/. You will need AWS credentials to execute the terraform script. 
+
+You will also need to execute "terraform init" manually in the terraform directory.
 
 # Installing the Client Tools
 
