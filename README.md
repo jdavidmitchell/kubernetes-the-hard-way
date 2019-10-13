@@ -4,17 +4,16 @@ This page is based on [Kubernetes The Hard
 Way](https://github.com/kelseyhightower/kubernetes-the-hard-way/) guide. It
 compiles AWS CLI commands, mainly from revision
 [8185017](https://github.com/kelseyhightower/kubernetes-the-hard-way/tree/818501707e418fc4d6e6aedef8395ca368e3097e)
-of the guide (right before AWS support has been removed), with small
+of the guide (right before AWS support has been removed), with 
 adjustments. Best is to follow the original guide side-by-side with this page as
-the former providers background and context and this page contains only the
-commands.
+the former provides background and context.
 
 The intent of this page is similar to the original guide.
 
-CR comment: The terraform script will setup the AWS resources, including an elastic loadbalancer,
-an ssh key and so on. The terraform script will create about half of the certs needed by the k8s cluster. 
-After the AWS resources are setup, you will need to proceed with a manual install.
-This README has been updated with the lastest versions and the latest configuration files, but these configuration files below should be compared the configuration files in [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/) to check for correctness.
+CR comment: The terraform script (in app/03-provisioning) will setup the AWS resources, including an elastic loadbalancer,
+an ssh public key and so on. After the AWS resources are setup, create.sh will use shell scripts and ansible playbooks 
+to install and configure kubernetes.
+This README has been updated with the lastest versions and the latest configuration files. These configuration files are used in the shell scripts (found in the app directory) to configure kubernetes, and they are provided here for your reference. The README contents below should be compared the configuration files in the shell scripts and to the content provided in [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/) to check for correctness.
 
 ## Labs
 
@@ -215,7 +214,7 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
   --filters \
   'Name=root-device-type,Values=ebs' \
   'Name=architecture,Values=x86_64' \
-  'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*' \
+  'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*' \
   | jq -r '.Images|sort_by(.Name)[-1]|.ImageId')
 ```
 
@@ -227,13 +226,11 @@ mkdir -p ssh
 aws ec2 create-key-pair \
   --key-name kubernetes \
   --output text --query 'KeyMaterial' \
-  > ssh/kubernetes.id_rsa
-chmod 600 ssh/kubernetes.id_rsa
+  > ssh/aws_compute_engine
+chmod 600 ssh/aws_compute_engine
 ```
 
 ### Kubernetes Controllers
-
-Using `t2.micro` instead of `t2.small` as `t2.micro` is covered by AWS free tier
 
 ```sh
 for i in 0 1 2; do
@@ -243,7 +240,7 @@ for i in 0 1 2; do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t2.micro \
+    --instance-type t2.small \
     --private-ip-address 10.240.0.1${i} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
@@ -267,7 +264,7 @@ for i in 0 1 2; do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t2.micro \
+    --instance-type t2.medium \
     --private-ip-address 10.240.0.2${i} \
     --user-data "name=worker-${i}|pod-cidr=10.200.${i}.0/24" \
     --subnet-id ${SUBNET_ID} \
@@ -466,10 +463,7 @@ cfssl gencert \
   tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
 ```
 
-## Distribute the Client and Server Certificates (MANUAL FROM HERE)
-
-CR Comment: At this point, the terraform script is finished. As I recall, the keys had to be manually copied.
-Also, more keys need to be generated in the newer versions of kubernetes.
+## Distribute the Client and Server Certificates
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md)
 
@@ -884,13 +878,9 @@ EOF
 
 ## The Kubernetes Frontend Load Balancer
 
-Nothing to do - already setup in [previous section](#kubernetes-public-address)
-
-You can try: curl --cacert ca.pem https://${KUBERNETES_PUBLIC_ADDRESS}:6443/version
+You can confirm the setup of the LB with the following: curl --cacert ca.pem https://${KUBERNETES_PUBLIC_ADDRESS}:6443/version
 
 # Bootstrapping the Kubernetes Worker Nodes
-
-CR Comments: Updated the more recent versions of kubernetes.
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md)
 
@@ -1238,6 +1228,8 @@ EXTERNAL_IP=$(aws ec2 describe-instances \
 ```
 
 # Cleaning Up
+
+CR comment: The cleanup.sh script has been updated. Routes may have to be manually deleted.
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/14-cleanup.md)
 
