@@ -31,6 +31,7 @@ ADD ansible.cfg /root/.ansible.cfg
 ADD .aws/credentials /root/.aws/credentials
 ADD .aws/config /root/.aws/config
 ADD .ssh/aws_compute_engine /root/.ssh/aws_compute_engine
+ADD .ssh/aws_compute_engine.pub /root/.ssh/aws_compute_engine.pub
 
 WORKDIR /root/app
 
