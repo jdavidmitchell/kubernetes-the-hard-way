@@ -7,7 +7,13 @@ then
   # ⚠️ Here we create a key with no passphrase
   ssh-keygen -q -P "" -f ${PWD}/.ssh/aws_compute_engine
 else 
-  echo "### .ssh/aws_compute_engine file exits. Skipping ssh key creation."
+  echo "### .ssh/aws_compute_engine file exits. Skipping ssh public-private key creation."
+fi
+
+if [ ! -e "${PWD}/.ssh/aws_compute_engine.pub" ]
+then
+  echo "### aws_compute_engine.pub does not exit. Creating ssh public key from the private key."
+  ssh-keygen -y -f ${PWD}/.ssh/aws_compute_engine > ${PWD}/.ssh/aws_compute_engine.pub
 fi
 
 if [ ! -e "${PWD}/.aws/credentials" ]

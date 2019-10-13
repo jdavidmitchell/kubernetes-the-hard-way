@@ -11,9 +11,27 @@ the former provides background and context.
 The intent of this page is similar to the original guide.
 
 CR comment: The terraform script (in app/03-provisioning) will setup the AWS resources, including an elastic loadbalancer,
-an ssh public key and so on. After the AWS resources are setup, create.sh will use shell scripts and ansible playbooks 
-to install and configure kubernetes.
-This README has been updated with the lastest versions and the latest configuration files. These configuration files are used in the shell scripts (found in the app directory) to configure kubernetes, and they are provided here for your reference. The README contents below should be compared the configuration files in the shell scripts and to the content provided in [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/) to check for correctness.
+an ssh public key and so on. After the AWS resources are setup, follow the instructions below to install your kubernetes cluster.
+
+The shell scripts and ansible playbooks in the app/ directory, will be used to generate configuration files and to install kubernetes.
+This README is provided as a reference to how kubernetes might be installed manually.
+
+This README file and the scripts in the app/ directory should be compared the content provided in [kelsey hightower's repo](https://github.com/kelseyhightower/kubernetes-the-hard-way/) to check for correctness.
+
+## How to use 🗺
+
+- Edit `profile` to match your desired aws region and alter versions for your project.
+- Launch `./in.sh`, it will build a docker image and launch a container with
+all needed tools
+- In the container, launch `./create.sh` and wait for ~10 minutes
+- And you're done ! 🚀
+
+🚽 When you finish, launch `./cleanup.sh` to remove aws resources.
+
+## Versions
+
+The Kubernetes version is set as an environment variable in the `Dockerfile`.
+You can change it if you want to try other versions. The version of cfssl tools are also set in the `Dockerfile`. The remaining versions can be found in `profile`. 
 
 ## Labs
 

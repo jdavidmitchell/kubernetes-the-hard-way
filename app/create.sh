@@ -1,13 +1,5 @@
 #!/bin/sh
 
-export ETCD_VERSION=v3.4.0
-export CNI_VERSION=0.7.1
-export CNI_PLUGINS_VERSION=0.8.2
-export CONTAINERD_VERSION=1.2.9
-
-# AWS region to create cluster
-AWS_REGION="us-west-1"
-
 # The ssh public key was copied to /root/.ssh in the DockerFile
 PUBLICKEY=/root/.ssh/aws_compute_engine.pub
 
