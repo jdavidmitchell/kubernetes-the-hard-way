@@ -19,7 +19,7 @@ fi
 
 terraform apply -auto-approve -var region="${AWS_REGION}" -var pubkey="${PUBLICKEY}" -state="kubernetes.tfstate" 03-provisioning
 
-read varname
+#read varname
 
 cd /root/app/04-certs
 ./gen-certs.sh
