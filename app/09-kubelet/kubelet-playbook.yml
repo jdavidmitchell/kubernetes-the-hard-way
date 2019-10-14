@@ -97,10 +97,15 @@
       mode: 0744
   - name: Generate kubelet... conf
     command: /root/gen-kubelet-conf.sh
-  - name: Install socat on nodes
+  - name: Install socat, conntrack and ipset on node
     apt:
-      name: socat
+      name: "{{ packages }}"
       update_cache: yes
+    vars:
+      packages:
+      - socat
+      - conntrack
+      - ipset
   - name: Reload systemd
     command: systemctl daemon-reload
   - name: Enable containerd kubelet kube-proxy
