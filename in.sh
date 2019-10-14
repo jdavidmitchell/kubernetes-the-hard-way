@@ -5,7 +5,7 @@ then
   echo "### aws_compute_engine does not exit. Creating ssh public-private key."
   mkdir -p ${PWD}/.ssh
   # ⚠️ Here we create a key with no passphrase
-  ssh-keygen -q -P "" -f ${PWD}/.ssh/aws_compute_engine
+  ssh-keygen -m PEM -t rsa -b 4096 -P "" -q -f ${PWD}/.ssh/aws_compute_engine
 else 
   echo "### .ssh/aws_compute_engine file exits. Skipping ssh public-private key creation."
 fi

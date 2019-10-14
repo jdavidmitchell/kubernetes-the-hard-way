@@ -1,6 +1,6 @@
 #!/bin/sh
 
-terraform destroy -state=”kubernetes.tfstate” -auto-approve 03-provisioning/
+terraform destroy -state=kubernetes.tfstate -auto-approve 03-provisioning/
 
 #destroy web firewall
 #terraform destroy 11-network

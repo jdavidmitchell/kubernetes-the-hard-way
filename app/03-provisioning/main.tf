@@ -149,7 +149,7 @@ resource "aws_lb_listener" "k8s" {
 
 resource "aws_key_pair" "k8s" {
   key_name   = "kubernetes"
-  public_key = var.pubkey
+  public_key = "${file(var.pubkey)}"
 }
 
 data "aws_ami" "ubuntu" {
