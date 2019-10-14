@@ -24,7 +24,7 @@ fi
 echo "Generating worker certificates..."
 for i in 0 1 2; do
   instance="worker-${i}"
-  instance_hostname="ip-10-240-0-2${i}"
+  instance_hostname="worker-${i}"
   cat > ${instance}-csr.json <<EOF
 {
   "CN": "system:node:${instance_hostname}",
