@@ -26,6 +26,8 @@
     file: path=/var/lib/kubernetes state=directory
   - name: Creates directory /var/run/kubernetes
     file: path=/var/run/kubernetes state=directory
+  - name: Creates directory /etc/containerd
+    file: path=/etc/containerd state=directory
   - name: Unarchive cri Tools
     unarchive:
       src: https://github.com/kubernetes-incubator/cri-tools/releases/download/v1.15.0/crictl-v1.15.0-linux-amd64.tar.gz

@@ -10,7 +10,16 @@ then
   echo
 fi
 
+if [ -e "${PWD}/kubernetes.tfstate" ]
+then
+  echo "### moving kubernetes.tfstate to k8s.tfstate"
+  mv ${PWD}/kubernetes.tfstate ${PWD}/k8s.tfstate
+  echo
+fi
+
 terraform apply -auto-approve -var region="${AWS_REGION}" -var pubkey="${PUBLICKEY}" -state="kubernetes.tfstate" 03-provisioning
+
+read varname
 
 cd /root/app/04-certs
 ./gen-certs.sh

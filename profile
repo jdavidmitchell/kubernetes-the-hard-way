@@ -15,5 +15,5 @@ export CNI_PLUGINS_VERSION=0.8.2
 export CONTAINERD_VERSION=1.2.9
 
 # The AWS region to create the cluster
-export AWS_REGION="us-west-1"
+export AWS_REGION="us-east-1"
 
