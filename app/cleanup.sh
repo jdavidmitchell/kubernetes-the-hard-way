@@ -2,11 +2,6 @@
 
 terraform destroy -state=kubernetes.tfstate -auto-approve
 
-#destroy web firewall
-#terraform destroy 11-network
-
-rm 07-etcd/*.retry
-
 rm 06-encryption/encryption-config.yaml
 
 rm 05-kubeconfig/*.kubeconfig

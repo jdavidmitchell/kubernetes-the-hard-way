@@ -7,7 +7,7 @@ echo "kubernetes route-table-id is ${ROUTE_TABLE_ID}"
 
 for instance in worker-0 worker-1 worker-2; do
   instance_id_ip="$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
+    --filters "Name=tag:Name,Values=${instance}" "Name=instance-state-name,Values=running" \
     --output text --query 'Reservations[].Instances[].[InstanceId,PrivateIpAddress]')"
   instance_id="$(echo "${instance_id_ip}" | cut -f1)"
   instance_ip="$(echo "${instance_id_ip}" | cut -f2)"
