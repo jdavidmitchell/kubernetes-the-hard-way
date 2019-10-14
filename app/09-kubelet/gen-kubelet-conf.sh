@@ -26,6 +26,7 @@ EOF
 cat > /etc/cni/net.d/99-loopback.conf <<EOF
 {
     "cniVersion": "0.3.1",
+    "name": "lo",
     "type": "loopback"
 }
 EOF

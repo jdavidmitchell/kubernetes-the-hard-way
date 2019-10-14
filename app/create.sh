@@ -37,6 +37,7 @@ ansible-playbook -i inventory.cfg 07-etcd/etcd-playbook.yml
 
 ansible-playbook -i inventory.cfg 08-kube-controller/kube-controller-playbook.yml
 ansible-playbook -i inventory.cfg 08-kube-controller/rbac-playbook.yml
+ansible-playbook -i inventory.cfg 08-kube-controller/http-health-checks.yml
 
 ansible-playbook -i inventory.cfg 09-kubelet/kubelet-playbook.yml
 
