@@ -22,5 +22,5 @@
   - name: Enable nginx
     command: systemctl enable nginx
   - name: Start nginx
-    command: systemctl start nginx
+    command: systemctl restart nginx
 
