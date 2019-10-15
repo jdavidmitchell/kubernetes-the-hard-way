@@ -45,6 +45,8 @@ ansible-playbook -i inventory.cfg 09-kubelet/kubelet-playbook.yml
 
 ./11-network/network-conf.sh
 
-#./12-coredns/setup-coredns.sh
-./12-kubedns/setup-kubedns.sh
+./12-coredns/setup-coredns.sh
+#./12-kubedns/setup-kubedns.sh
+
+#ansible-playbook -i inventory.cfg 13-addons/helm-install.yml
 
