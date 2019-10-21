@@ -99,6 +99,7 @@ ExecStart=/usr/local/bin/kubelet \\
   --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\
   --image-pull-progress-deadline=2m \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --resolv-conf=/run/systemd/resolve/resolv.conf \\
   --network-plugin=cni \\
   --register-node=true \\
   --v=2

@@ -21,7 +21,7 @@ resource "aws_vpc" "k8s" {
 }
 
 resource "aws_vpc_dhcp_options" "k8s" {
-  domain_name         = "us-west-2.compute.internal"
+  domain_name         = "${var.region}.compute.internal"
   domain_name_servers = ["AmazonProvidedDNS"]
 
   tags = {
