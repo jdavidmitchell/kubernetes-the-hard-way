@@ -1,0 +1,26 @@
+- hosts: controllers
+  remote_user: ubuntu
+  become: yes
+  tasks:
+  - name: Install nginx
+    apt:
+      name: nginx
+      update_cache: yes
+  - name: Create directory /etc/nginx/sites-available/
+    file: path=/etc/nginx/sites-available state=directory
+  - name: Create directory /etc/nginx/sites-enabled/
+    file: path=/etc/nginx/sites-enabled state=directory
+  - name: copy gen-nginx script
+    copy:
+      src: /root/app/08-kube-controller/gen-nginx-conf.sh
+      dest: /root/gen-nginx-conf.sh
+      owner: root
+      group: root
+      mode: 0744
+  - name: Generate nginx conf
+    command: /root/gen-nginx-conf.sh
+  - name: Enable nginx
+    command: systemctl enable nginx
+  - name: Start nginx
+    command: systemctl restart nginx
+
